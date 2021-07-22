@@ -39,7 +39,7 @@ func TestCopyBinary(t *testing.T) {
 func TestSetCorePattern(t *testing.T) {
 	tempDir := t.TempDir()
 	corePatternDir := fmt.Sprintf("%s/proc/sys/kernel", tempDir)
-	corePatternFile = fmt.Sprintf("%s/core_pattern", corePatternDir)
+	corePatternFile := fmt.Sprintf("%s/core_pattern", corePatternDir)
 	// Core pattern file
 	assert.NoError(t, os.MkdirAll(corePatternDir, 0755))
 	f, err := os.Create(corePatternFile)
@@ -51,7 +51,7 @@ func TestSetCorePattern(t *testing.T) {
 	assert.NoError(t, err)
 	f.Close()
 
-	setCorePattern(fmt.Sprintf("%s/executable", tempDir))
+	setCorePattern(corePatternFile, fmt.Sprintf("%s/executable", tempDir))
 
 	assert.FileExists(t, corePatternFile)
 

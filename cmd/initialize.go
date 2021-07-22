@@ -9,6 +9,7 @@ import (
 )
 
 const CRASH_REPORTER = "crash_reporter"
+const CORE_PATTERN_FILE = "/proc/sys/kernel/core_pattern"
 
 var (
 	initCmd = &cobra.Command{
@@ -16,7 +17,6 @@ var (
 		Short: "Initialize and copy the binary to the host",
 		Run:   initialize,
 	}
-	corePatternFile = "/proc/sys/kernel/core_pattern" // Only used for testing
 
 	path   string
 	binary string
@@ -33,10 +33,10 @@ func init() {
 
 func initialize(cmd *cobra.Command, args []string) {
 	destination := copyBinary()
-	setCorePattern(destination)
+	setCorePattern(CORE_PATTERN_FILE, destination)
 }
 
-func setCorePattern(destination string) {
+func setCorePattern(corePatternFile, executable string) {
 	f, err := os.OpenFile(corePatternFile, os.O_CREATE|os.O_RDWR, 0644)
 
 	if err != nil {
@@ -45,7 +45,7 @@ func setCorePattern(destination string) {
 	}
 	defer f.Close()
 
-	pattern := fmt.Sprintf("|%s collect PID=%%p UID=%%u GID=%%g sig=%%s", destination)
+	pattern := fmt.Sprintf("|%s collect PID=%%p UID=%%u GID=%%g sig=%%s", executable)
 	_, err = f.Write([]byte(pattern))
 	if err != nil {
 		println("Unable to write to core_pattern file")
