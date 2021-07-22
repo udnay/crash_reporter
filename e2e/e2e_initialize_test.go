@@ -19,7 +19,12 @@ func TestRunInitialize(t *testing.T) {
 	path, err := filepath.Abs(CR_BINARY)
 	assert.NoError(t, err)
 
-	initCommand := exec.Command(CR_BINARY, "initialize", "-p", "/tmp", "-b", path)
+	initCommand := exec.Command("sudo", CR_BINARY, "initialize", "-p", "/tmp", "-b", path)
+	fmt.Printf("initcommand %s\n", initCommand.String())
+
+	initCommand.Stdout = os.Stdout
+	initCommand.Stderr = os.Stderr
+
 	assert.NoError(t, initCommand.Run())
 
 	assert.FileExists(t, "/tmp/crash_reporter")
@@ -33,5 +38,5 @@ func TestRunInitialize(t *testing.T) {
 
 	pattern := string(b[:n])
 
-	assert.Contains(t, pattern, fmt.Sprintf("|%s collect", path))
+	assert.Contains(t, pattern, fmt.Sprintf("|%s collect", "/tmp/crash_reporter"))
 }

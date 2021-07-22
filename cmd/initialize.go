@@ -33,14 +33,16 @@ func init() {
 
 func initialize(cmd *cobra.Command, args []string) {
 	destination := copyBinary()
+	fmt.Printf("Done binary copy\n")
+	fmt.Printf("Calling setCorePatternFile with %s, %s\n", CORE_PATTERN_FILE, destination)
 	setCorePattern(CORE_PATTERN_FILE, destination)
 }
 
 func setCorePattern(corePatternFile, executable string) {
-	f, err := os.OpenFile(corePatternFile, os.O_CREATE|os.O_RDWR, 0644)
+	f, err := os.OpenFile(corePatternFile, os.O_WRONLY|os.O_CREATE, os.ModePerm)
 
 	if err != nil {
-		println("Unable to open and write to core_pattern file")
+		fmt.Printf("error %v\n", err)
 		return
 	}
 	defer f.Close()
@@ -48,7 +50,7 @@ func setCorePattern(corePatternFile, executable string) {
 	pattern := fmt.Sprintf("|%s collect PID=%%p UID=%%u GID=%%g sig=%%s", executable)
 	_, err = f.Write([]byte(pattern))
 	if err != nil {
-		println("Unable to write to core_pattern file")
+		fmt.Printf("unable to write to %s: %v\n", corePatternFile, err)
 		return
 	}
 }
@@ -83,6 +85,7 @@ func copyBinary() string {
 	_, err = copyCmd.Output()
 	if err != nil {
 		println("Copy of binary failed")
+		println(err)
 		return ""
 	}
 
