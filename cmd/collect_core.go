@@ -2,54 +2,111 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
 	collectCoreCmd = &cobra.Command{
 		Use:   "collect",
 		Short: "Collects a core dump from stdin plus the args passed to it",
-		Run:   collect,
+		Run: func(cmd *cobra.Command, args []string) {
+			collect(cmd.Flags())
+		},
 	}
+
+	pid, gid, uid, sig    int
+	outputDir, outputFile string
 )
 
 func init() {
+
+	collectCoreCmd.Flags().IntVarP(&pid, "pid", "p", -1, "Process ID of the crashing process")
+	collectCoreCmd.Flags().IntVarP(&uid, "uid", "u", -1, "Uuser ID of the crashing process")
+	collectCoreCmd.Flags().IntVarP(&gid, "gid", "g", -1, "Group ID of the crashing process")
+	collectCoreCmd.Flags().IntVarP(&sig, "sig", "s", -1, "Signal received of the crashing process")
+	collectCoreCmd.Flags().StringVarP(&outputDir, "out", "o", "/tmp", "The directory to write the output dir")
+	collectCoreCmd.Flags().StringVarP(&outputFile, "file", "f", "crash_report", "The name of file to be outputted to")
+
+	collectCoreCmd.MarkFlagRequired("pid")
+
 	rootCmd.AddCommand(collectCoreCmd)
+
 }
 
-func collect(cmd *cobra.Command, args []string) {
+func collect(flags *pflag.FlagSet) {
 
-	f, err := os.Create("/tmp/crash_reporter.out")
+	pid, err := flags.GetInt("pid")
 	if err != nil {
-		println("Error creating file")
-		panic(err)
+		fmt.Printf("Unable to get PID flag")
+		return
 	}
-	defer f.Close()
 
-	pid := args[0]
-	uid := args[1]
-	gid := args[2]
-	sig := args[3]
+	gid, err := flags.GetInt("gid")
+	if err != nil {
+		fmt.Printf("Unable to get GID flag")
+		return
+	}
+	uid, err := flags.GetInt("uid")
+	if err != nil {
+		fmt.Printf("Unable to get UID flag")
+		return
+	}
+	sig, err := flags.GetInt("sig")
+	if err != nil {
+		fmt.Printf("Unable to get SIG flag")
+		return
+	}
 
-	fmt.Fprintf(f, "pid %s, UID %s, gid %s, sig %s", pid, uid, gid, sig)
-	fmt.Fprintf(f, "Args %x", args)
-	f.Sync()
+	outputDir, err := flags.GetString("out")
+	if err != nil {
+		fmt.Printf("Unable to get output directory flag")
+		return
+	}
+
+	outputFile, err := flags.GetString("file")
+	if err != nil {
+		fmt.Printf("Unable to get PID flag")
+		return
+	}
+
+	crashMetaFile, err := os.Create(fmt.Sprintf("%s/%s.%d.meta", outputDir, outputFile, pid))
+	if err != nil {
+		fmt.Printf("Error creating file: %v", err)
+		return
+	}
+	defer crashMetaFile.Close()
+
+	_, err = fmt.Fprintf(crashMetaFile, "pid %d, UID %d, gid %d, sig %d", pid, uid, gid, sig)
+	if err != nil {
+		fmt.Printf("Unable to write to crash meta file: %v", err)
+		return
+	}
+	crashMetaFile.Sync()
 
 	bufferSize := 2048
 	bytes := make([]byte, bufferSize)
 
+	crashCoreFile, err := os.Create(fmt.Sprintf("%s/%s.%d.core", outputDir, outputFile, pid))
+	if err != nil {
+		fmt.Printf("Unable to create core dump file: %v", err)
+		return
+	}
+	defer crashCoreFile.Close()
+
 	for {
 		read, err := os.Stdin.Read(bytes)
-		if err != nil {
-			println("Couldn't read from stdin")
+		if err != nil && err != io.EOF {
+			fmt.Printf("Couldn't read from stdin: %v \n", err)
 			break
 		}
 
-		_, err = f.Write(bytes)
+		_, err = crashCoreFile.Write(bytes)
 		if err != nil {
-			println("Couldn't write to file")
+			fmt.Println("Couldn't write to file")
 			break
 		}
 

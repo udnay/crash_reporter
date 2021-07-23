@@ -33,6 +33,10 @@ func init() {
 
 func initialize(cmd *cobra.Command, args []string) {
 	destination := copyBinary()
+
+	if destination == "" {
+		return
+	}
 	fmt.Printf("Done binary copy\n")
 	fmt.Printf("Calling setCorePatternFile with %s, %s\n", CORE_PATTERN_FILE, destination)
 	setCorePattern(CORE_PATTERN_FILE, destination)
@@ -47,7 +51,7 @@ func setCorePattern(corePatternFile, executable string) {
 	}
 	defer f.Close()
 
-	pattern := fmt.Sprintf("|%s collect PID=%%p UID=%%u GID=%%g sig=%%s", executable)
+	pattern := fmt.Sprintf("|%s collect --pid=%%p --uid=%%u --gid=%%g --sig=%%s", executable)
 	_, err = f.Write([]byte(pattern))
 	if err != nil {
 		fmt.Printf("unable to write to %s: %v\n", corePatternFile, err)
@@ -84,8 +88,7 @@ func copyBinary() string {
 	copyCmd := exec.Command("cp", binary, destinationPath)
 	_, err = copyCmd.Output()
 	if err != nil {
-		println("Copy of binary failed")
-		println(err)
+		fmt.Printf("Copy of binary failed: %v", err)
 		return ""
 	}
 
