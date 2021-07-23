@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -98,8 +99,8 @@ func collect(flags *pflag.FlagSet) {
 
 	for {
 		read, err := os.Stdin.Read(bytes)
-		if err != nil {
-			fmt.Printf("Couldn't read from stdin: %v", err)
+		if err != nil && err != io.EOF {
+			fmt.Printf("Couldn't read from stdin: %v \n", err)
 			break
 		}
 
