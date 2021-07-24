@@ -32,13 +32,16 @@ func init() {
 }
 
 func initialize(cmd *cobra.Command, args []string) {
+	logger.Info("Running initialize")
+
 	destination := copyBinary()
 
 	if destination == "" {
 		return
 	}
-	fmt.Printf("Done binary copy\n")
-	fmt.Printf("Calling setCorePatternFile with %s, %s\n", CORE_PATTERN_FILE, destination)
+
+	logger.Infof("Done binary copy\n")
+	logger.Infof("Calling setCorePatternFile with %s, %s\n", CORE_PATTERN_FILE, destination)
 	setCorePattern(CORE_PATTERN_FILE, destination)
 }
 
@@ -62,18 +65,18 @@ func setCorePattern(corePatternFile, executable string) {
 func copyBinary() string {
 	source, err := os.Stat(binary)
 	if err != nil {
-		println("Unable to open binary file")
+		logger.Infof("Unable to open binary file")
 		return ""
 	}
 
 	if !source.Mode().IsRegular() {
-		println("Source file is not regular")
+		logger.Infof("Source file is not regular")
 		return ""
 	}
 
 	info, err := os.Stat(path)
 	if err != nil {
-		println("Unable to destination path info")
+		logger.Infof("Unable to destination path info")
 		return ""
 	}
 
@@ -88,7 +91,7 @@ func copyBinary() string {
 	copyCmd := exec.Command("cp", binary, destinationPath)
 	_, err = copyCmd.Output()
 	if err != nil {
-		fmt.Printf("Copy of binary failed: %v", err)
+		logger.Infof("Copy of binary failed: %v", err)
 		return ""
 	}
 

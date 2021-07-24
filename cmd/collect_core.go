@@ -38,51 +38,52 @@ func init() {
 }
 
 func collect(flags *pflag.FlagSet) {
+	logger.Info("Running collect")
 
 	pid, err := flags.GetInt("pid")
 	if err != nil {
-		fmt.Printf("Unable to get PID flag")
+		logger.Infof("Unable to get PID flag")
 		return
 	}
 
 	gid, err := flags.GetInt("gid")
 	if err != nil {
-		fmt.Printf("Unable to get GID flag")
+		logger.Infof("Unable to get GID flag")
 		return
 	}
 	uid, err := flags.GetInt("uid")
 	if err != nil {
-		fmt.Printf("Unable to get UID flag")
+		logger.Infof("Unable to get UID flag")
 		return
 	}
 	sig, err := flags.GetInt("sig")
 	if err != nil {
-		fmt.Printf("Unable to get SIG flag")
+		logger.Infof("Unable to get SIG flag")
 		return
 	}
 
 	outputDir, err := flags.GetString("out")
 	if err != nil {
-		fmt.Printf("Unable to get output directory flag")
+		logger.Infof("Unable to get output directory flag")
 		return
 	}
 
 	outputFile, err := flags.GetString("file")
 	if err != nil {
-		fmt.Printf("Unable to get PID flag")
+		logger.Infof("Unable to get PID flag")
 		return
 	}
 
 	crashMetaFile, err := os.Create(fmt.Sprintf("%s/%s.%d.meta", outputDir, outputFile, pid))
 	if err != nil {
-		fmt.Printf("Error creating file: %v", err)
+		logger.Infof("Error creating file: %v", err)
 		return
 	}
 	defer crashMetaFile.Close()
 
 	_, err = fmt.Fprintf(crashMetaFile, "pid %d, UID %d, gid %d, sig %d", pid, uid, gid, sig)
 	if err != nil {
-		fmt.Printf("Unable to write to crash meta file: %v", err)
+		logger.Infof("Unable to write to crash meta file: %v", err)
 		return
 	}
 	crashMetaFile.Sync()
@@ -92,7 +93,7 @@ func collect(flags *pflag.FlagSet) {
 
 	crashCoreFile, err := os.Create(fmt.Sprintf("%s/%s.%d.core", outputDir, outputFile, pid))
 	if err != nil {
-		fmt.Printf("Unable to create core dump file: %v", err)
+		logger.Infof("Unable to create core dump file: %v", err)
 		return
 	}
 	defer crashCoreFile.Close()
@@ -100,13 +101,13 @@ func collect(flags *pflag.FlagSet) {
 	for {
 		read, err := os.Stdin.Read(bytes)
 		if err != nil && err != io.EOF {
-			fmt.Printf("Couldn't read from stdin: %v \n", err)
+			logger.Infof("Couldn't read from stdin: %v \n", err)
 			break
 		}
 
 		_, err = crashCoreFile.Write(bytes)
 		if err != nil {
-			fmt.Println("Couldn't write to file")
+			logger.Infof("Couldn't write to core file")
 			break
 		}
 
