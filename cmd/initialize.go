@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 
 	"github.com/spf13/cobra"
 )
@@ -18,8 +19,9 @@ var (
 		Run:   initialize,
 	}
 
-	path   string
-	binary string
+	path        string
+	binary      string
+	collectArgs string
 )
 
 func init() {
@@ -27,6 +29,8 @@ func init() {
 	initCmd.MarkFlagRequired("path")
 
 	initCmd.Flags().StringVarP(&binary, "binary", "b", fmt.Sprintf("/bin/%s", CRASH_REPORTER), "The location of the binary being copied")
+
+	initCmd.Flags().StringVar(&collectArgs, "collectArgs", "--pid=%p --uid=%u --gid=%g --sig=%s", "The arguments to be sent to the collect command, see collect command for all options")
 
 	rootCmd.AddCommand(initCmd)
 }
@@ -54,7 +58,20 @@ func setCorePattern(corePatternFile, executable string) {
 	}
 	defer f.Close()
 
-	pattern := fmt.Sprintf("|%s collect --pid=%%p --uid=%%u --gid=%%g --sig=%%s", executable)
+	// Check if the collect args is surrounded by `"` and strip them if needed
+	match, err := regexp.Match(`^\".*\"$`, []byte(collectArgs))
+	if err != nil {
+		fmt.Printf("Unable to match collect args: %v", err)
+		return
+	}
+
+	if match {
+		collectArgs = collectArgs[1 : len(collectArgs)-1]
+	}
+
+	fmt.Println(collectArgs)
+
+	pattern := fmt.Sprintf("|%s collect %s", executable, collectArgs)
 	_, err = f.Write([]byte(pattern))
 	if err != nil {
 		fmt.Printf("unable to write to %s: %v\n", corePatternFile, err)
