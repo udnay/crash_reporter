@@ -30,7 +30,7 @@ func TestCollectCoreGCS(t *testing.T) {
 	assert.NoError(t, err)
 
 	var credentials map[string]string
-	b := make([]byte, 2048)
+	b := make([]byte, 100000)
 	n, err := credF.Read(b)
 	assert.NoError(t, err)
 	assert.NoError(t, json.Unmarshal(b[:n], &credentials))
