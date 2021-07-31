@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-go@v2
       - name: "Write credentials path"
         run: |
-          echo $GCS_SECRET >> /tmp/gcp_credentials.json
+          echo -E $GCS_SECRET >> /tmp/gcp_credentials.json
         env:
           GCS_SECRET: ${{secrets.GCS_BUCKET}}
       - name: "Write over test_config"
