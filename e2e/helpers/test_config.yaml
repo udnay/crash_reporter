@@ -1,0 +1,4 @@
+bucket: udnay-crash-reporter
+gcs: /tmp/gcp_credentials.json
+sink: gcs
+out: /crash_dumps
